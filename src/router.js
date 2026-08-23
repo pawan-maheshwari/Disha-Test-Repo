@@ -7,26 +7,36 @@ const routes = {
 };
 
 export function initRouter(container) {
-  const navigate = async () => {
-    let path = window.location.hash.slice(1) || '/';
-    if (!path.startsWith('/')) path = '/' + path;
+  async function navigate() {
+    let raw = window.location.hash.slice(1) || '/';
+    let path = raw.startsWith('/') ? raw : '/' + raw;
 
-    const loadView = routes[path] || routes['/'];
+    const loader = routes[path] || routes['/'];
 
-    document.querySelectorAll('header nav a').forEach(el => {
-      el.classList.toggle('active', el.getAttribute('href') === `#${path}`);
+    // Update active state in nav
+    document.querySelectorAll('header nav a').forEach(a => {
+      const href = a.getAttribute('href').replace('#', '');
+      const cleanHref = href.startsWith('/') ? href : '/' + href;
+      a.classList.toggle('active', cleanHref === path || (path === '/' && cleanHref === '/'));
     });
 
     try {
-      container.innerHTML = `<div style="padding:24px; text-align:center;">Loading…</div>`;
-      const viewModule = await loadView();
+      container.innerHTML = '<div style="padding:40px; text-align:center; color:#53565A;">Loading…</div>';
+      const page = await loader();
       container.innerHTML = '';
-      viewModule.render(container);
+      page.render(container);
     } catch (err) {
-      console.error('Router failed to load path:', path, err);
-      container.innerHTML = `<div style="color:var(--cardinal); padding:20px;">Failed to load view: ${path}</div>`;
+      console.error('Page load error:', err);
+      container.innerHTML = `
+        <div style="padding:30px; text-align:center; color:#8C1515;">
+          <h3>Failed to load page</h3>
+          <p style="color:#53565A; font-size:13px; margin-top:8px;">
+            Error loading <code>${path}</code>. Check browser console for missing file path.
+          </p>
+        </div>
+      `;
     }
-  };
+  }
 
   window.addEventListener('hashchange', navigate);
   navigate();
