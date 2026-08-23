@@ -8,25 +8,26 @@ const routes = {
 
 export function initRouter(container) {
   const navigate = async () => {
-    const path = window.location.hash.slice(1) || '/';
+    let path = window.location.hash.slice(1) || '/';
+    if (!path.startsWith('/')) path = '/' + path;
+
     const loadView = routes[path] || routes['/'];
-    
-    // Update active navbar state
+
     document.querySelectorAll('header nav a').forEach(el => {
       el.classList.toggle('active', el.getAttribute('href') === `#${path}`);
     });
 
     try {
-      container.innerHTML = `<div style="padding:20px; text-align:center;">Loading…</div>`;
+      container.innerHTML = `<div style="padding:24px; text-align:center;">Loading…</div>`;
       const viewModule = await loadView();
       container.innerHTML = '';
       viewModule.render(container);
     } catch (err) {
-      container.innerHTML = `<div style="color:var(--cardinal);">Failed to load page.</div>`;
-      console.error(err);
+      console.error('Router failed to load path:', path, err);
+      container.innerHTML = `<div style="color:var(--cardinal); padding:20px;">Failed to load view: ${path}</div>`;
     }
   };
 
   window.addEventListener('hashchange', navigate);
-  navigate(); // Initial view render
+  navigate();
 }
